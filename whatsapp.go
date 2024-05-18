@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
@@ -16,14 +17,21 @@ import (
 )
 
 type WhatsappClient struct {
-	waClient *whatsmeow.Client
+	waClient              *whatsmeow.Client
+	serviceStatusNotifier func(status ServiceStatusVal)
+	notifyQr              func(string)
 }
 
-func NewWhatsappClient() *WhatsappClient {
-	client := &WhatsappClient{}
+func NewWhatsappClient(serviceStatusNotifier func(status ServiceStatusVal), notifyQr func(string)) *WhatsappClient {
+	client := &WhatsappClient{
+		serviceStatusNotifier: serviceStatusNotifier,
+		notifyQr:              notifyQr,
+	}
 
+	serviceStatusNotifier(SERVICE_STATUS_UNKOWN)
 	deviceStore, err := makeStore()
 	if err != nil {
+		serviceStatusNotifier(SERVICE_STATUS_ERR)
 		panic(err)
 	}
 
@@ -35,6 +43,33 @@ func NewWhatsappClient() *WhatsappClient {
 }
 
 func (client *WhatsappClient) Init() error {
+
+	// polling for status
+	go func() {
+		var PollingIntervalSeconds int64 = 60 * 5
+		var PollingIntervalWhenDoneSeconds int64 = 10
+		lastStatus := SERVICE_STATUS_DOWN
+
+		time.Sleep(time.Duration(PollingIntervalWhenDoneSeconds * int64(time.Second)))
+
+		for {
+
+			if client.waClient.IsConnected() && client.waClient.IsLoggedIn() {
+				client.serviceStatusNotifier(SERVICE_STATUS_UP)
+				lastStatus = SERVICE_STATUS_UP
+			} else {
+				client.serviceStatusNotifier(SERVICE_STATUS_DOWN)
+				lastStatus = SERVICE_STATUS_DOWN
+			}
+
+			if lastStatus == SERVICE_STATUS_DOWN {
+				time.Sleep(time.Duration(PollingIntervalWhenDoneSeconds * int64(time.Second)))
+			} else {
+				time.Sleep(time.Duration(PollingIntervalSeconds * int64(time.Second)))
+			}
+		}
+	}()
+
 	if client.waClient.Store.ID != nil {
 		return client.waClient.Connect()
 	}
@@ -44,6 +79,7 @@ func (client *WhatsappClient) Init() error {
 
 func (client *WhatsappClient) Destory() {
 	client.waClient.Disconnect()
+	client.serviceStatusNotifier(SERVICE_STATUS_DOWN)
 }
 
 func (client *WhatsappClient) AddEventHandler(eventHandler whatsmeow.EventHandler) uint32 {
@@ -68,6 +104,7 @@ func (client *WhatsappClient) firstTimeConnect() error {
 	for evt := range qrChan {
 		if evt.Event == "code" {
 			fmt.Println("QR code:", evt.Code)
+			client.notifyQr(evt.Code)
 			qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
 		} else {
 			fmt.Println("Login event:", evt.Event)

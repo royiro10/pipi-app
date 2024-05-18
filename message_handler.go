@@ -5,18 +5,23 @@ import (
 	"log"
 
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )
 
 type PipiMessageHandler struct {
-	pipiSessions   map[string]*Pipi
-	whatsappClient *WhatsappClient
+	pipiSessions          map[string]*Pipi
+	whatsappClient        *WhatsappClient
+	serviceStatusNotifier func(status ServiceStatusVal)
+	allowedJids           []string
 }
 
-func NewMessageHandler(whatsappClient *WhatsappClient) *PipiMessageHandler {
+func NewMessageHandler(whatsappClient *WhatsappClient, allowedJids []string, serviceStatusNotifier func(status ServiceStatusVal)) *PipiMessageHandler {
 	messageHandler := &PipiMessageHandler{
-		pipiSessions:   make(map[string]*Pipi),
-		whatsappClient: whatsappClient,
+		pipiSessions:          make(map[string]*Pipi),
+		whatsappClient:        whatsappClient,
+		serviceStatusNotifier: serviceStatusNotifier,
+		allowedJids:           allowedJids,
 	}
 
 	return messageHandler
@@ -34,7 +39,7 @@ func (messageHandler *PipiMessageHandler) Handler() whatsmeow.EventHandler {
 
 func (messageHandler *PipiMessageHandler) handleMessage(msg *events.Message) {
 	if chatJid := msg.Info.Chat; chatJid.String() != "" {
-		if chatJid.String() != "972523236663@s.whatsapp.net" {
+		if !messageHandler.IsJidAllowed(chatJid) {
 			log.Default().Println("ignore message from: ", chatJid.String())
 			return
 		}
@@ -45,7 +50,7 @@ func (messageHandler *PipiMessageHandler) handleMessage(msg *events.Message) {
 
 		session := messageHandler.pipiSessions[chatJid.String()]
 		if session == nil {
-			session = NewPipi()
+			session = NewPipi(messageHandler.serviceStatusNotifier)
 			messageHandler.pipiSessions[chatJid.String()] = session
 		}
 
@@ -62,4 +67,14 @@ func (messageHandler *PipiMessageHandler) handleMessage(msg *events.Message) {
 			log.Fatalf("Failed to send message: %v", err)
 		}
 	}
+}
+
+func (messageHandler *PipiMessageHandler) IsJidAllowed(chatJid types.JID) bool {
+	for _, jidStr := range messageHandler.allowedJids {
+		if jidStr == chatJid.String() {
+			return true
+		}
+	}
+
+	return false
 }

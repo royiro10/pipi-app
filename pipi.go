@@ -27,17 +27,21 @@ func setupGlobalGenaiClient() {
 }
 
 type Pipi struct {
-	chatSession *genai.ChatSession
+	chatSession           *genai.ChatSession
+	serviceStatusNotifier func(status ServiceStatusVal)
 }
 
-func NewPipi() *Pipi {
-	pipi := &Pipi{}
+func NewPipi(serviceStatusNotifier func(status ServiceStatusVal)) *Pipi {
+	pipi := &Pipi{serviceStatusNotifier: serviceStatusNotifier}
+
+	pipi.serviceStatusNotifier(SERVICE_STATUS_UNKOWN)
 
 	if GlobalGenaiClient == nil {
 		setupGlobalGenaiClient()
 	}
 
-	model := GlobalGenaiClient.GenerativeModel("gemini-1.0-pro")
+	model := GlobalGenaiClient.GenerativeModel("gemini-1.5-flash-latest") //"gemini-1.0-pro")
+
 	pipi.chatSession = model.StartChat()
 	pipi.chatSession.History = []*genai.Content{
 		{
@@ -53,6 +57,8 @@ func NewPipi() *Pipi {
 			Role: "model",
 		},
 	}
+
+	pipi.serviceStatusNotifier(SERVICE_STATUS_UP)
 
 	return pipi
 }
@@ -71,6 +77,7 @@ func (p *Pipi) SendMessage(ctx context.Context, msg string) (string, error) {
 		}
 	}
 
+	p.serviceStatusNotifier(SERVICE_STATUS_ERR)
 	return "", err
 }
 

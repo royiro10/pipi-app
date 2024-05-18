@@ -1,0 +1,121 @@
+body {
+    background-color: #222;
+    /* Dark background color */
+    color: #ddd;
+    /* Light text color */
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #333;
+    /* Slightly darker header background */
+    padding: 10px;
+    text-align: center;
+}
+
+h1 {
+    margin: 0;
+    color: #fff;
+    /* White text color for headings */
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5%;
+}
+
+section {
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #444;
+    /* Darker border color */
+    border-radius: 5px;
+    width: 80%;
+    color: #ddd;
+    /* Light text color for sections */
+}
+
+h2 {
+    margin-top: 0;
+    color: #fff;
+    /* White text color for headings */
+}
+
+.server-logs {
+    height: 200px;
+    overflow-y: auto;
+    background-color: #333;
+    /* Darker background for logs */
+    color: #eee;
+    /* Light text color for logs */
+}
+
+pre {
+    font-family: monospace;
+    background-color: #444;
+    /* Even darker background for pre tags */
+    padding: 10px;
+    color: #ddd;
+    /* Light text color for pre tags */
+}
+
+.service-status {
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.service-status.up {
+    background-color: #4CAF50;
+    /* Green background color */
+}
+
+.service-status.ok {
+    background-color: #4CAF50;
+    /* Green background color */
+}
+
+.service-status.down {
+    background-color: #F44336;
+    /* Red background color */
+}
+
+.service-status.error {
+    background-color: #F44336;
+    /* Red background color */
+}
+
+.service-status.unknown {
+    background-color: #bc8342;
+    /* Gray background color */
+}
+
+.wrap-logs {
+    white-space: pre-wrap; /* Allow wrapping at whitespace characters */
+    word-wrap: break-word; /* Break long words at hyphens if available */
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
+}
+
+button {
+    background-color: #4CAF50;
+    /* Green background color */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #45A049;
+    /* Green with a darker shade on hover */
+}

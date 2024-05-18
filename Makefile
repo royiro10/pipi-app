@@ -6,7 +6,8 @@ all: clean build run
 
 # Target to build the executable
 build:
-	CGO_ENABLED=1 go build -o $(PROJECT_NAME) $(GO_SRC)
+	go build -o $(PROJECT_NAME) $(GO_SRC)
+# CGO_ENABLED=1 go build -o $(PROJECT_NAME) $(GO_SRC)
 
 # Target to run the project
 run: build
