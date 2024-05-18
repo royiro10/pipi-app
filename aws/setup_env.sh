@@ -19,9 +19,3 @@ log DEBUG "installing golang..."
 sudo apt install -y golang
 go version
 log INGO "installed golang"
-
-log INFO "build pipi"
-make build
-
-log INFO "run pipi"
-GEMINAI_API_KEY=$GEMINAI_API_KEY $EXE_FILE
