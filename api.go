@@ -53,6 +53,17 @@ type Server struct {
 	QrBase64   string
 }
 
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		log.Printf("Started %s %s\n", r.Method, r.URL.Path)
+
+		next.ServeHTTP(w, r)
+
+		log.Printf("Completed %s %s in %v\n", r.Method, r.URL.Path, time.Since(start))
+	})
+}
+
 func NewServer() *Server {
 	s := &Server{
 		logChannel:   make(chan *LogMessage),
@@ -78,12 +89,12 @@ func (s *Server) Listen(addr string) {
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))
 
-	mux.HandleFunc("/api/qr", s.QrHandler)
-	mux.HandleFunc("/api/stop", s.StopHandler)
-	mux.HandleFunc("/api/logs", s.LogsHandler)
-	mux.HandleFunc("/api/logs/history", s.LogsHistoryHandler)
-	mux.HandleFunc("/api/services-status", s.ServicesStatusHandler)
-	mux.Handle("/", fs)
+	mux.Handle("/api/qr", LoggingMiddleware(http.HandlerFunc(s.QrHandler)))
+	mux.Handle("/api/stop", LoggingMiddleware(http.HandlerFunc(s.StopHandler)))
+	mux.Handle("/api/logs", LoggingMiddleware(http.HandlerFunc(s.LogsHandler)))
+	mux.Handle("/api/logs/history", LoggingMiddleware(http.HandlerFunc(s.LogsHistoryHandler)))
+	mux.Handle("/api/services-status", LoggingMiddleware(http.HandlerFunc(s.ServicesStatusHandler)))
+	mux.Handle("/", LoggingMiddleware(fs))
 
 	s.httpServer = &http.Server{
 		Addr:    addr,
