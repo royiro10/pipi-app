@@ -18,7 +18,8 @@ func setupGlobalGenaiClient() {
 		log.Default().Println("GlobalGenaiClient is already setup")
 	}
 
-	client, err := genai.NewClient(context.Background(), option.WithAPIKey(os.Getenv("GEMINAI_API_KEY")))
+	log.Default().Println("GEMINI_API_KEY: ", os.Getenv("GEMINI_API_KEY"))
+	client, err := genai.NewClient(context.Background(), option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
 	if err != nil {
 		log.Fatal(err)
 	}

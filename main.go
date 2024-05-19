@@ -15,7 +15,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var SystemPromptPath string = "./secrets/system_prompt.txt"
+var SystemPromptPath string = "./secrets/_ai_system_prompt.txt"
 var AllowedJidsPath string = "./secrets/allowed_jids.json"
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	releaseStdoutLeach := listenToStdout(server.logChannel)
 	defer releaseStdoutLeach()
 
-	go server.Listen(":3000")
+	go server.Listen(":80")
 
 	waClientStatusNotifier := server.MakeServiceNotifier(WhatsappClientServiceName)
 	pipiStatusNotifier := server.MakeServiceNotifier(PipiServiceName)
