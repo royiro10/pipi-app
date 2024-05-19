@@ -37,6 +37,8 @@ func (messageHandler *PipiMessageHandler) Handler() whatsmeow.EventHandler {
 	}
 }
 
+var ResetCode = "!"
+
 func (messageHandler *PipiMessageHandler) handleMessage(msg *events.Message) {
 	if chatJid := msg.Info.Chat; chatJid.String() != "" {
 		if !messageHandler.IsJidAllowed(chatJid) {
@@ -57,6 +59,11 @@ func (messageHandler *PipiMessageHandler) handleMessage(msg *events.Message) {
 		log.Default().Printf("Received a message: %s\n", msg.Message.GetConversation())
 
 		msgContent := msg.Message.GetConversation()
+		if ResetCode == msgContent {
+			session = NewPipi(messageHandler.serviceStatusNotifier)
+			messageHandler.pipiSessions[chatJid.String()] = session
+		}
+
 		pipiResponse, err := session.SendMessage(ctx, msgContent)
 		if err != nil {
 			log.Default().Panicf("could not create response from pipi", err)
