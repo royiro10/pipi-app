@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -20,9 +18,11 @@ var AllowedJidsPath string = "./secrets/allowed_jids.json"
 
 func main() {
 	log.Default().Println("starting pipi")
-	allowedJids := parseAllowedJids(AllowedJidsPath)
+
+	bouncer := NewBouncer(AllowedJidsPath)
 
 	server := NewServer()
+	server.Bouncer = bouncer
 	releaseStdoutLeach := listenToStdout(server.logChannel)
 	defer releaseStdoutLeach()
 
@@ -43,7 +43,7 @@ func main() {
 
 	log.Default().Println("whatsapp client is up")
 
-	pipiMessageHandler := NewMessageHandler(whatsappClient, allowedJids, pipiStatusNotifier)
+	pipiMessageHandler := NewMessageHandler(whatsappClient, bouncer, pipiStatusNotifier)
 	whatsappClient.AddEventHandler(pipiMessageHandler.Handler())
 
 	log.Default().Println("up and running")
@@ -114,31 +114,6 @@ func listenToStdout(outputChan chan *LogMessage) func() {
 	}
 
 	return release
-}
-
-func parseAllowedJids(allowedJidsPath string) []string {
-	jsonFile, err := os.Open(allowedJidsPath)
-	if err != nil {
-		log.Fatalf("Failed to open JSON file: %s", err)
-	}
-	defer jsonFile.Close()
-
-	// Read the file contents
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		log.Fatalf("Failed to read JSON file: %s", err)
-	}
-
-	// Define a slice to hold the parsed data
-	var allowed_jids []string
-
-	// Unmarshal the JSON data into the slice
-	err = json.Unmarshal(byteValue, &allowed_jids)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal JSON data: %s", err)
-	}
-
-	return allowed_jids
 }
 
 func JoinWithBaseDir(paths ...string) string {

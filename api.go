@@ -50,7 +50,9 @@ type Server struct {
 	serviceStatus map[string]ServiceStatus
 
 	httpServer *http.Server
-	QrBase64   string
+
+	QrBase64 string
+	Bouncer  *Bouncer
 }
 
 func LoggingMiddleware(next http.Handler) http.Handler {
@@ -94,6 +96,7 @@ func (s *Server) Listen(addr string) {
 	mux.Handle("/api/logs", LoggingMiddleware(http.HandlerFunc(s.LogsHandler)))
 	mux.Handle("/api/logs/history", LoggingMiddleware(http.HandlerFunc(s.LogsHistoryHandler)))
 	mux.Handle("/api/services-status", LoggingMiddleware(http.HandlerFunc(s.ServicesStatusHandler)))
+	mux.Handle("/api/bouncer", LoggingMiddleware(http.HandlerFunc(s.BouncerHandler)))
 	mux.Handle("/", LoggingMiddleware(fs))
 
 	s.httpServer = &http.Server{
@@ -178,6 +181,48 @@ func (s *Server) ServicesStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(v)
+}
+
+func (s *Server) BouncerHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(s.Bouncer.GetAllowedMembers())
+	case http.MethodPost:
+		decoder := json.NewDecoder(r.Body)
+		var requestedMembers []string
+		if err := decoder.Decode(&requestedMembers); err != nil {
+			http.Error(w, fmt.Sprintf("Bad Reqest: %s", err), http.StatusBadRequest)
+		}
+
+		s.Bouncer.SetAllowedMembers(requestedMembers)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(s.Bouncer.GetAllowedMembers())
+
+	case http.MethodDelete:
+		decoder := json.NewDecoder(r.Body)
+		var requestedMembers struct {
+			Member string `json:"member"`
+		}
+		if err := decoder.Decode(&requestedMembers); err != nil {
+			http.Error(w, fmt.Sprintf("Bad Reqest: %s", err), http.StatusBadRequest)
+		}
+
+		existingMembers := s.Bouncer.GetAllowedMembers()
+		updatedMembers := make([]string, 0)
+		for _, member := range existingMembers {
+			if member != requestedMembers.Member {
+				updatedMembers = append(updatedMembers, member)
+			}
+		}
+
+		s.Bouncer.SetAllowedMembers(updatedMembers)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(s.Bouncer.GetAllowedMembers())
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func (s *Server) StopHandler(w http.ResponseWriter, r *http.Request) {

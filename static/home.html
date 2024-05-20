@@ -24,6 +24,15 @@
             <ul id="service-list"></ul>
         </section>
 
+        <section class="allowed-strings">
+            <h2>Allowed Strings</h2>
+            <ul id="allowed-list"></ul>
+            <p>
+                <input type="text" id="new-string" placeholder="Enter new allowed string">
+                <button id="add-button">Add String</button>
+            </p>
+        </section>
+
         <h2>Server Logs</h2>
         <section class="server-logs">
             <div id="log-container"></div>
@@ -33,12 +42,17 @@
         const LOGS_ENDPOINT = `/api/logs`
         const SERVICES_STATUS_ENDPOINT = `/api/services-status`
         const QR_ENDPOINT = `/api/qr`
+        const BOUNCER_ENDPOINT = `/api/bouncer`
 
         const serviceList = document.getElementById("service-list");
         const logContainer = document.getElementById("log-container");
         const qrSection = document.getElementById("qr-section")
         const qrButton = document.getElementById("qr-button");
         const qrImage = document.getElementById("qr-image");
+
+        const allowedList = document.getElementById("allowed-list");
+        const newStringInput = document.getElementById("new-string");
+        const addButton = document.getElementById("add-button");
 
         function updateServiceList(services) {
             let isServiceBDown = false;
@@ -55,6 +69,7 @@
                     isServiceBDown = true;
                 }
             }
+
             qrButton.disabled = !isServiceBDown;
             qrSection.style.display = qrButton.disabled ? 'none' : 'inline-block';
         }
@@ -65,6 +80,66 @@
                 .then(data => updateServiceList(data))
                 .catch(error => console.error("Error fetching service data:", error));
         }, 3 * 1000)
+
+
+        updateMembersList()
+
+        function addMember() {
+            const newString = newStringInput.value.trim();
+            if (!newString) {
+                alert("Please enter a new string.");
+                return;
+            }
+
+            console.log(Array.from(allowedList.querySelectorAll("li").values()))
+
+            return fetch(BOUNCER_ENDPOINT, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify([...Array.from(allowedList.querySelectorAll("li").values()).map(li => li.textContent), newString])
+            })
+                .then(response => response.json())
+                .catch(error => console.error("Error adding new string:", error));
+        };
+
+        async function updateMembersList() {
+            newStringInput.value = "";
+            allowedList.innerHTML = "";
+            members = await fetch(BOUNCER_ENDPOINT)
+                .then(response => response.json())
+
+            for (const allowedString of members) {
+                const listItem = document.createElement("li");
+                const removeButton = document.createElement("button");
+                removeButton.textContent = allowedString;
+                removeButton.onclick = async () => {
+                    await deleteMember(allowedString)
+                    await updateMembersList()
+                };
+                listItem.appendChild(removeButton);
+                allowedList.appendChild(listItem);
+            }
+        }
+
+        function deleteMember(stringToRemove) {
+            console.log(JSON.stringify({ member: stringToRemove }))
+            return fetch(`/api/bouncer`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ member: stringToRemove })
+            })
+                .then(response => response.json())
+                .catch(error => console.error("Error removing string:", error));
+        }
+
+        addButton.onclick = async () => {
+            await addMember()
+            await updateMembersList()
+        }
 
 
         const eventSource = new EventSource(LOGS_ENDPOINT);
