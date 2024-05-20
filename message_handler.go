@@ -55,7 +55,11 @@ func (messageHandler *PipiMessageHandler) handleMessage(msg *events.Message) {
 			messageHandler.pipiSessions[chatJid.String()] = session
 		}
 
-		msgContent := msg.Message.GetConversation()
+		msgContent := getMessageContent(msg)
+		if msgContent == "" {
+			return
+		}
+
 		log.Default().Printf("Received a message: %s\n", msgContent)
 
 		if ResetCode == msgContent {
@@ -73,5 +77,19 @@ func (messageHandler *PipiMessageHandler) handleMessage(msg *events.Message) {
 		if err != nil {
 			log.Fatalf("Failed to send message: %v", err)
 		}
+	}
+}
+
+func getMessageContent(msg *events.Message) string {
+	switch {
+	case msg.Message.Conversation != nil:
+		return msg.Message.GetConversation()
+
+	case msg.Message.ExtendedTextMessage != nil:
+		return msg.Message.GetExtendedTextMessage().GetText()
+
+	default:
+		log.Default().Println("ERROR: could not extract conent", msg)
+		return ""
 	}
 }
