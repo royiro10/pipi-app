@@ -18,20 +18,20 @@ import (
 
 type WhatsappClient struct {
 	waClient              *whatsmeow.Client
-	serviceStatusNotifier func(status ServiceStatusVal)
+	serviceStatusNotifier func(status ServiceStatusVal, reason string)
 	notifyQr              func(string)
 }
 
-func NewWhatsappClient(serviceStatusNotifier func(status ServiceStatusVal), notifyQr func(string)) *WhatsappClient {
+func NewWhatsappClient(serviceStatusNotifier func(status ServiceStatusVal, reason string), notifyQr func(string)) *WhatsappClient {
 	client := &WhatsappClient{
 		serviceStatusNotifier: serviceStatusNotifier,
 		notifyQr:              notifyQr,
 	}
 
-	serviceStatusNotifier(SERVICE_STATUS_UNKOWN)
+	serviceStatusNotifier(SERVICE_STATUS_UNKOWN, "service initiaited")
 	deviceStore, err := makeStore()
 	if err != nil {
-		serviceStatusNotifier(SERVICE_STATUS_ERR)
+		serviceStatusNotifier(SERVICE_STATUS_ERR, err.Error())
 		panic(err)
 	}
 
@@ -55,10 +55,10 @@ func (client *WhatsappClient) Init() error {
 		for {
 
 			if client.waClient.IsConnected() && client.waClient.IsLoggedIn() {
-				client.serviceStatusNotifier(SERVICE_STATUS_UP)
+				client.serviceStatusNotifier(SERVICE_STATUS_UP, "client is connected and logged in")
 				lastStatus = SERVICE_STATUS_UP
 			} else {
-				client.serviceStatusNotifier(SERVICE_STATUS_DOWN)
+				client.serviceStatusNotifier(SERVICE_STATUS_DOWN, "client is not connected or logged in")
 				lastStatus = SERVICE_STATUS_DOWN
 			}
 
@@ -79,7 +79,7 @@ func (client *WhatsappClient) Init() error {
 
 func (client *WhatsappClient) Destory() {
 	client.waClient.Disconnect()
-	client.serviceStatusNotifier(SERVICE_STATUS_DOWN)
+	client.serviceStatusNotifier(SERVICE_STATUS_DOWN, "whatsapp client has been destoryed")
 }
 
 func (client *WhatsappClient) AddEventHandler(eventHandler whatsmeow.EventHandler) uint32 {

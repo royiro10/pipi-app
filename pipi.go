@@ -29,13 +29,13 @@ func setupGlobalGenaiClient() {
 
 type Pipi struct {
 	chatSession           *genai.ChatSession
-	serviceStatusNotifier func(status ServiceStatusVal)
+	serviceStatusNotifier func(status ServiceStatusVal, reason string)
 }
 
-func NewPipi(serviceStatusNotifier func(status ServiceStatusVal)) *Pipi {
+func NewPipi(serviceStatusNotifier func(status ServiceStatusVal, reason string)) *Pipi {
 	pipi := &Pipi{serviceStatusNotifier: serviceStatusNotifier}
 
-	pipi.serviceStatusNotifier(SERVICE_STATUS_UNKOWN)
+	pipi.serviceStatusNotifier(SERVICE_STATUS_UNKOWN, "service initiaited")
 
 	if GlobalGenaiClient == nil {
 		setupGlobalGenaiClient()
@@ -59,7 +59,7 @@ func NewPipi(serviceStatusNotifier func(status ServiceStatusVal)) *Pipi {
 		},
 	}
 
-	pipi.serviceStatusNotifier(SERVICE_STATUS_UP)
+	pipi.serviceStatusNotifier(SERVICE_STATUS_UP, "pipi chat session initiaited successfully")
 
 	return pipi
 }
@@ -78,7 +78,7 @@ func (p *Pipi) SendMessage(ctx context.Context, msg string) (string, error) {
 		}
 	}
 
-	p.serviceStatusNotifier(SERVICE_STATUS_ERR)
+	// p.serviceStatusNotifier(SERVICE_STATUS_ERR, err.Error())
 	return "", err
 }
 

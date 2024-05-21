@@ -250,15 +250,16 @@ func (s *Server) QrHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(qrCode)
 }
 
-func (s *Server) MakeServiceNotifier(service string) func(status ServiceStatusVal) {
+func (s *Server) MakeServiceNotifier(service string) func(status ServiceStatusVal, reason string) {
 	var latestSatatus ServiceStatusVal = ""
 
-	return func(status ServiceStatusVal) {
+	return func(status ServiceStatusVal, reason string) {
 		if latestSatatus == status {
+			log.Default().Printf("[%s] status %s: %s", service, status, reason)
 			return
 		}
 
-		log.Default().Printf("[%s] status -> %s", service, status)
+		log.Default().Printf("[%s] status -> %s: %s", service, status, reason)
 		s.UpdateServiceStatus(service, status)
 
 		latestSatatus = status

@@ -8,13 +8,15 @@ import (
 )
 
 type Bouncer struct {
-	membersIdentifiers []string
+	membersIdentifiers  []string
+	allowedJidsFilePath string
 }
 
 func NewBouncer(allowdMembersFilePath string) *Bouncer {
 
 	bouncer := &Bouncer{
-		membersIdentifiers: parseAllowedJids(allowdMembersFilePath),
+		allowedJidsFilePath: allowdMembersFilePath,
+		membersIdentifiers:  parseAllowedJids(allowdMembersFilePath),
 	}
 
 	return bouncer
@@ -22,6 +24,10 @@ func NewBouncer(allowdMembersFilePath string) *Bouncer {
 
 func (bouncer *Bouncer) SetAllowedMembers(overideMembersIdentifiers []string) {
 	bouncer.membersIdentifiers = overideMembersIdentifiers
+
+	if err := saveAllowJids(bouncer.allowedJidsFilePath, bouncer.membersIdentifiers); err != nil {
+		log.Default().Println("could not save allowed jids: ", err)
+	}
 }
 
 func (bouncer *Bouncer) GetAllowedMembers() []string {
@@ -58,4 +64,18 @@ func parseAllowedJids(allowedJidsPath string) []string {
 	}
 
 	return allowed_jids
+}
+
+func saveAllowJids(allowedJidsPath string, allowedJids []string) error {
+	content, err := json.Marshal(allowedJids)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(allowedJidsPath, content, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -11,11 +11,11 @@ import (
 type PipiMessageHandler struct {
 	pipiSessions          map[string]*Pipi
 	whatsappClient        *WhatsappClient
-	serviceStatusNotifier func(status ServiceStatusVal)
+	serviceStatusNotifier func(status ServiceStatusVal, reason string)
 	bouncer               *Bouncer
 }
 
-func NewMessageHandler(whatsappClient *WhatsappClient, bouncer *Bouncer, serviceStatusNotifier func(status ServiceStatusVal)) *PipiMessageHandler {
+func NewMessageHandler(whatsappClient *WhatsappClient, bouncer *Bouncer, serviceStatusNotifier func(status ServiceStatusVal, reason string)) *PipiMessageHandler {
 	messageHandler := &PipiMessageHandler{
 		pipiSessions:          make(map[string]*Pipi),
 		whatsappClient:        whatsappClient,
